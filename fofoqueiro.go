@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -54,13 +57,16 @@ func displayMenu() {
 
 func readCommand() int {
 	var command int
-	_, _ = fmt.Scan(&command)
+	_, err := fmt.Scan(&command)
+	if err != nil {
+		fmt.Println("Got error during recognizing command:", err)
+	}
 
 	return command
 }
 
 func startMonitoring() {
-	urls := []string{"https://random-status-code.herokuapp.com/", "https://www.diegoramos.me/"}
+	urls := readResourcesToMonitoring()
 	fmt.Println("Monitoring", len(urls), "resources")
 
 	for index := 0; index < monitoringTimes; index++ {
@@ -74,10 +80,48 @@ func startMonitoring() {
 }
 
 func checkResource(resource string) {
-	res, _ := http.Get(resource)
+	res, err := http.Get(resource)
+
+	if err != nil {
+		fmt.Println("Got error during checking resource", resource, ":", err)
+	}
+
 	if res.StatusCode == 200 {
 		fmt.Println(resource, "seems healthy!")
 	} else {
 		fmt.Println(resource, "seems unhealthy!. Got status code=", res.StatusCode)
 	}
+}
+
+func readResourcesToMonitoring() []string {
+	var result []string
+
+	file, err := os.Open("resources.txt")
+	if err != nil {
+		fmt.Println("Got error during reading resources file:", err)
+	}
+
+	reader := bufio.NewReader(file)
+	for {
+		line, err := reader.ReadString('\n')
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			fmt.Println("Got error during reading line from file:", err)
+		}
+
+		line = strings.TrimSpace(line)
+
+		result = append(result, line)
+	}
+
+	err = file.Close()
+	if err != nil {
+		fmt.Println("Got error during close file:", err)
+	}
+
+	return result
 }
