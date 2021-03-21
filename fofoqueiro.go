@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -14,8 +15,19 @@ import (
 	"github.com/common-nighthawk/go-figure"
 )
 
+type ResourceStatus string
+
+const (
+	UP    ResourceStatus = "UP"
+	DOWN  ResourceStatus = "DOWN"
+	OTHER                = "Other"
+)
+
+const version = 1.1
 const monitoringTimes = 5
 const monitoringDelay = 3
+const logFileName = "monitoring.log"
+const resourcesFileName = "resources.txt"
 
 func main() {
 
@@ -42,7 +54,6 @@ func main() {
 }
 
 func displayIntro() {
-	const version = 1.1
 	myFigure := figure.NewFigure("Fofoqueiro", "", true)
 	myFigure.Print()
 
@@ -88,15 +99,17 @@ func checkResource(resource string) {
 
 	if res.StatusCode == 200 {
 		fmt.Println(resource, "seems healthy!")
+		registerLog(resource, UP, res.StatusCode)
 	} else {
 		fmt.Println(resource, "seems unhealthy!. Got status code=", res.StatusCode)
+		registerLog(resource, DOWN, res.StatusCode)
 	}
 }
 
 func readResourcesToMonitoring() []string {
 	var result []string
 
-	file, err := os.Open("resources.txt")
+	file, err := os.Open(resourcesFileName)
 	if err != nil {
 		fmt.Println("Got error during reading resources file:", err)
 	}
@@ -124,4 +137,25 @@ func readResourcesToMonitoring() []string {
 	}
 
 	return result
+}
+
+func registerLog(resource string, status ResourceStatus, statusCode int) {
+	file, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err != nil {
+		fmt.Println("Got error during interact with log file:", err)
+	}
+
+	_, err = file.WriteString("[" + time.Now().Format("2006-01-02 15:04:05") +
+		"] " + resource + " - status(" + strconv.Itoa(statusCode) + "):" +
+		string(status) + "\n")
+
+	if err != nil {
+		fmt.Println("Got error during writing file:", err)
+	}
+
+	err = file.Close()
+	if err != nil {
+		fmt.Println("Got error during close file:", err)
+	}
 }
