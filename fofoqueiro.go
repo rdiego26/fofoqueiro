@@ -4,14 +4,22 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
+
+import (
+	"github.com/common-nighthawk/go-figure"
+)
+
+const monitoringTimes = 5
+const monitoringDelay = 3
 
 func main() {
 
 	displayIntro()
-	displayMenu()
 
 	for {
+		displayMenu()
 		command := readCommand()
 
 		switch command {
@@ -31,9 +39,10 @@ func main() {
 }
 
 func displayIntro() {
-	const name = "Ramos"
 	const version = 1.1
-	fmt.Println("Hello sir,", name)
+	myFigure := figure.NewFigure("Fofoqueiro", "", true)
+	myFigure.Print()
+
 	fmt.Println("Version", version)
 }
 
@@ -45,20 +54,30 @@ func displayMenu() {
 
 func readCommand() int {
 	var command int
-	fmt.Scan(&command)
-	fmt.Println("You chose", command)
+	_, _ = fmt.Scan(&command)
 
 	return command
 }
 
 func startMonitoring() {
-	fmt.Println("Monitoring...")
-	site := "https://random-status-code.herokuapp.com/"
+	urls := []string{"https://random-status-code.herokuapp.com/", "https://www.diegoramos.me/"}
+	fmt.Println("Monitoring", len(urls), "resources")
 
-	res, _ := http.Get(site)
+	for index := 0; index < monitoringTimes; index++ {
+		for _, resource := range urls {
+			checkResource(resource)
+		}
+		time.Sleep(monitoringDelay * time.Second)
+		fmt.Println("")
+	}
+	fmt.Println("")
+}
+
+func checkResource(resource string) {
+	res, _ := http.Get(resource)
 	if res.StatusCode == 200 {
-		fmt.Println(site, "seems healthy!")
+		fmt.Println(resource, "seems healthy!")
 	} else {
-		fmt.Println(site, "seems unhealthy!. Got status code=", res.StatusCode)
+		fmt.Println(resource, "seems unhealthy!. Got status code=", res.StatusCode)
 	}
 }
