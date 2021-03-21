@@ -43,7 +43,7 @@ func main() {
 		case 2:
 			readLogs()
 		case 0:
-			fmt.Println("Quitting...")
+			fmt.Println("See ya! :)")
 			os.Exit(0)
 		default:
 			fmt.Println("Unrecognized command!")
