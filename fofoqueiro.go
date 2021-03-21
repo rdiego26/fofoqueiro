@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,9 +19,8 @@ import (
 type ResourceStatus string
 
 const (
-	UP    ResourceStatus = "UP"
-	DOWN  ResourceStatus = "DOWN"
-	OTHER                = "Other"
+	UP   ResourceStatus = "UP"
+	DOWN ResourceStatus = "DOWN"
 )
 
 const version = 1.1
@@ -41,7 +41,7 @@ func main() {
 		case 1:
 			startMonitoring()
 		case 2:
-			fmt.Println("Showing logs...")
+			readLogs()
 		case 0:
 			fmt.Println("Quitting...")
 			os.Exit(0)
@@ -158,4 +158,14 @@ func registerLog(resource string, status ResourceStatus, statusCode int) {
 	if err != nil {
 		fmt.Println("Got error during close file:", err)
 	}
+}
+
+func readLogs() {
+	file, err := ioutil.ReadFile(logFileName)
+
+	if err != nil {
+		fmt.Println("Got error during reading logs file:", err)
+	}
+
+	fmt.Println(string(file))
 }
